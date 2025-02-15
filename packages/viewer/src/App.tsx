@@ -36,6 +36,7 @@ import { Job } from "./domain/Job";
 import { Routine } from "./domain/Routine";
 import { Rows } from "./domain/Rows";
 import { Table } from "./domain/Table";
+import { TextRows } from "./domain/TextRows"; // Import TextRows component
 
 export type State = Partial<
   Readonly<{
@@ -49,7 +50,6 @@ export type State = Partial<
 >;
 
 const App: FC<{ webview: WebviewApi<State> }> = ({ webview: vscode }) => {
-  // const [focused, setFocused] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<Err<string> | undefined>(undefined);
   const toast = useToast();
@@ -115,10 +115,6 @@ const App: FC<{ webview: WebviewApi<State> }> = ({ webview: vscode }) => {
         return;
       }
       const { payload } = data;
-      // if (isFocusedEvent(payload)) {
-      //   setFocused(payload.payload.focused);
-      //   return;
-      // }
       if (isStartProcessingEvent(payload)) {
         setProcessing(true);
         setError(undefined);
@@ -190,6 +186,7 @@ const App: FC<{ webview: WebviewApi<State> }> = ({ webview: vscode }) => {
 
   useEffect(() => {
     const tabs = [
+      ...(rowsPayload ? ["Text Rows" as const] : []), // Change Test tab to Text Rows
       ...(rowsPayload ? ["Rows" as const] : []),
       ...tablePayloads.map(() => "Table" as const),
       ...routinePayloads.map(() => "Routine" as const),
@@ -197,7 +194,7 @@ const App: FC<{ webview: WebviewApi<State> }> = ({ webview: vscode }) => {
     ];
     setTabs(tabs);
     setState({ tabs });
-  }, [metadataPayload, routinePayloads, rowsPayload, setState, tablePayloads]);
+  }, [metadataPayload, routinePayloads, rowsPayload, setState, tablePayloads]); // Remove testTab dependency
 
   useEffect(() => {
     vscode.postMessage({ event: "loaded" });
@@ -228,6 +225,7 @@ const App: FC<{ webview: WebviewApi<State> }> = ({ webview: vscode }) => {
     <Tabs index={tabIndex} onChange={onTabChange}>
       <Header processing={processing}>
         <TabList>
+          {rowsPayload ? <Tab px={6}>Text Rows Preview</Tab> : null} {/* Change Test tab to Text Rows */}
           {rowsPayload ? <Tab px={6}>Rows</Tab> : null}
           {tablePayloads.map(({ id }) => (
             <Tab key={id} px={6}>
@@ -243,6 +241,11 @@ const App: FC<{ webview: WebviewApi<State> }> = ({ webview: vscode }) => {
         </TabList>
       </Header>
       <TabPanels>
+        {rowsPayload ? (
+          <TabPanel>
+            <TextRows rowsPayload={rowsPayload} /> {/* Pass rowsPayload to TextRows */}
+          </TabPanel>
+        ) : null}
         {rowsPayload ? (
           <TabPanel>
             <Rows
